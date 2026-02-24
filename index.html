@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>autogen — artificial life</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="loading-overlay">
+    <div id="loading-inner">
+      <div id="loading-title">AUTOGEN</div>
+      <div id="loading-subtitle">initializing neural substrate...</div>
+      <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
+      <div id="progress-text">preparing environment</div>
+    </div>
+  </div>
+
+  <div id="stats-overlay">
+    <span id="stat-fps">-- FPS</span>
+    <span id="stat-toks">-- tok/s</span>
+    <span id="stat-level">L0</span>
+    <span id="stat-xp">XP: 0</span>
+  </div>
+
+  <div id="thought-container">
+    <div id="thought-header">thought stream</div>
+    <div id="thought-stream"></div>
+  </div>
+
+  <div id="controls">
+    <div id="level-buttons">
+      <button class="level-btn active" data-level="0">L0</button>
+      <button class="level-btn" data-level="1">L1</button>
+      <button class="level-btn" data-level="2">L2</button>
+      <button class="level-btn" data-level="3">L3</button>
+    </div>
+    <div id="model-selector">
+      <select id="model-select">
+        <option value="SmolLM2-360M-Instruct-q4f16_1-MLC">SmolLM2-360M (fast)</option>
+        <option value="SmolLM2-135M-Instruct-q0f16-MLC">SmolLM2-135M (tiny)</option>
+        <option value="Qwen2.5-0.5B-Instruct-q4f16_1-MLC">Qwen2.5-0.5B</option>
+      </select>
+    </div>
+    <div id="input-row">
+      <input type="text" id="user-input" placeholder="speak to the creature..." autocomplete="off" />
+      <button id="send-btn">&#9654;</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

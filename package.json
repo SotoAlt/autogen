@@ -1,8 +1,20 @@
 {
   "name": "autogen",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Browser-native artificial life — a small LLM creature that lives in your tab, boots from noise to coherent thought, and evolves through user care and environmental pressure.",
   "private": true,
   "type": "module",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.78",
+    "three": "^0.173.0"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0"
+  }
 }

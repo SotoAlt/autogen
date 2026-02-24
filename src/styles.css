@@ -1,0 +1,266 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  overflow: hidden;
+}
+
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Loading overlay */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s;
+}
+
+#loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loading-inner {
+  text-align: center;
+  width: 400px;
+}
+
+#loading-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  color: #ff6b2b;
+  margin-bottom: 8px;
+}
+
+#loading-subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+}
+
+#progress-bar-container {
+  width: 100%;
+  height: 2px;
+  background: #1a1a1a;
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff6b2b, #00ff88);
+  transition: width 0.3s;
+}
+
+#progress-text {
+  font-size: 11px;
+  color: #555;
+}
+
+/* Stats overlay */
+#stats-overlay {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+#stats-overlay span {
+  background: rgba(10, 10, 10, 0.7);
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid #1a1a1a;
+}
+
+#stat-fps { color: #00ff88; }
+#stat-toks { color: #ff6b2b; }
+#stat-level { color: #6b8aff; }
+#stat-xp { color: #888; }
+
+/* Thought stream */
+#thought-container {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 380px;
+  max-height: 40vh;
+  z-index: 10;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+#thought-header {
+  padding: 8px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #444;
+  border-bottom: 1px solid #1a1a2e;
+}
+
+#thought-stream {
+  padding: 8px 12px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(40vh - 36px);
+}
+
+.thought-line {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.thought-token {
+  transition: color 0.2s;
+}
+
+.thought-default { color: #aaa; }
+.thought-curiosity { color: #6b8aff; }
+.thought-distress { color: #ff4444; }
+.thought-joy { color: #00ff88; }
+
+/* Scrollbar */
+#thought-stream::-webkit-scrollbar {
+  width: 4px;
+}
+#thought-stream::-webkit-scrollbar-track {
+  background: transparent;
+}
+#thought-stream::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+/* Controls */
+#controls {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 380px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#level-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.level-btn {
+  flex: 1;
+  padding: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 2px;
+  background: #111;
+  color: #555;
+  border: 1px solid #222;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.level-btn:hover {
+  border-color: #444;
+  color: #aaa;
+}
+
+.level-btn.active {
+  border-color: #ff6b2b;
+  color: #ff6b2b;
+  background: #1a1008;
+}
+
+#model-selector {
+  display: flex;
+}
+
+#model-select {
+  flex: 1;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  background: #111;
+  color: #888;
+  border: 1px solid #222;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#input-row {
+  display: flex;
+  gap: 6px;
+}
+
+#user-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  background: #111;
+  color: #e0e0e0;
+  border: 1px solid #222;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#user-input:focus {
+  border-color: #ff6b2b;
+}
+
+#user-input::placeholder {
+  color: #444;
+}
+
+#send-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  background: #1a1008;
+  color: #ff6b2b;
+  border: 1px solid #ff6b2b33;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#send-btn:hover {
+  background: #ff6b2b;
+  color: #0a0a0a;
+}
