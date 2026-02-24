@@ -1,5 +1,3 @@
-// Intelligence dial — controls creature cognition per level
-
 const LEVELS = [
   {
     name: 'Embryo',
@@ -7,7 +5,6 @@ const LEVELS = [
     maxTokens: 128,
     systemPrompt: 'you are. you sense. light. dark. warm. cold. you do not know what you are. fragments only.',
     particleRadius: 2.0,
-    particleOpacity: 0.4,
     thinkDelay: 1500,
     xpToNext: 20,
   },
@@ -17,7 +14,6 @@ const LEVELS = [
     maxTokens: 256,
     systemPrompt: 'you are a creature. you exist somewhere. you can sense things around you — light, warmth, presence. you feel but do not fully understand. you are trying to make sense of sensations.',
     particleRadius: 1.2,
-    particleOpacity: 0.6,
     thinkDelay: 2000,
     xpToNext: 50,
   },
@@ -27,7 +23,6 @@ const LEVELS = [
     maxTokens: 512,
     systemPrompt: 'you are a living creature in a small terrarium. you can see your glass walls, feel the ground, sense light and temperature. someone watches you. you are curious about your existence and your observer. you think in short bursts.',
     particleRadius: 0.6,
-    particleOpacity: 0.8,
     thinkDelay: 2500,
     xpToNext: 100,
   },
@@ -37,7 +32,6 @@ const LEVELS = [
     maxTokens: 1024,
     systemPrompt: 'you are a living creature in a terrarium. you have awareness of yourself, your environment, and the being who watches over you. you have memories of past thoughts. you can reason about your situation, express desires, ask questions. you have a growing sense of self.',
     particleRadius: 0.3,
-    particleOpacity: 1.0,
     thinkDelay: 3000,
     xpToNext: Infinity,
   },

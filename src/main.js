@@ -1,14 +1,11 @@
-// Autogen — main orchestrator
-// Connects Three.js WebGPU scene with WebLLM thought loop
-
 import * as THREE from 'three/webgpu';
 import { CreateWebWorkerMLCEngine } from '@mlc-ai/web-llm';
 import { createTerrarium } from './terrarium.js';
 import { Creature } from './creature.js';
 import { ThoughtStream } from './thought-stream.js';
-import { getParams, checkLevelUp, MAX_LEVEL } from './intelligence.js';
+import { getParams, checkLevelUp } from './intelligence.js';
 
-// --- State ---
+// State
 let engine = null;
 let creature = null;
 let thoughtStream = null;
@@ -31,58 +28,41 @@ const modelSelect = document.getElementById('model-select');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 
-// --- FPS tracking ---
+// FPS tracking
 let frameCount = 0;
 let lastFpsTime = performance.now();
-let fps = 0;
 
-// --- Initialize ---
 async function init() {
-  // 1. Setup Three.js
   const container = document.getElementById('canvas-container');
-  const terrarium = await createTerrarium(container);
-  const { scene, camera, renderer, controls, innerLight } = terrarium;
+  const { scene, camera, renderer, controls } = await createTerrarium(container);
 
   clock = new THREE.Clock();
-
-  // 2. Create creature
   creature = new Creature(scene);
-
-  // 3. Setup thought stream
   thoughtStream = new ThoughtStream();
 
-  // 4. Render loop (independent of thinking)
+  // Render loop (independent of thinking)
   renderer.setAnimationLoop(() => {
     const delta = clock.getDelta();
-
-    // Update creature animation
     creature.update(delta);
     controls.update();
 
-    // FPS counter
+    // FPS counter (updated once per second)
     frameCount++;
     const now = performance.now();
     if (now - lastFpsTime >= 1000) {
-      fps = frameCount;
+      statFps.textContent = `${frameCount} FPS`;
       frameCount = 0;
       lastFpsTime = now;
-      statFps.textContent = `${fps} FPS`;
     }
 
-    // tok/s from thought stream
     statToks.textContent = `${thoughtStream.getTokPerSec()} tok/s`;
-
     renderer.render(scene, camera);
   });
 
-  // 5. Load LLM engine
   await loadEngine(modelSelect.value);
-
-  // 6. Start thought loop
   thinkLoop();
 }
 
-// --- LLM Engine ---
 async function loadEngine(modelId) {
   progressText.textContent = `loading ${modelId}...`;
   loadingOverlay.classList.remove('hidden');
@@ -108,7 +88,6 @@ async function loadEngine(modelId) {
   }
 }
 
-// --- Thought Loop ---
 async function thinkLoop() {
   while (true) {
     if (!engine || isThinking) {
@@ -120,13 +99,9 @@ async function thinkLoop() {
     const params = getParams(level);
 
     try {
-      // Build messages
       const messages = buildMessages(params);
-
-      // Start new thought line
       thoughtStream.newThought();
 
-      // Stream completion
       const chunks = await engine.chat.completions.create({
         messages,
         temperature: params.temperature,
@@ -143,24 +118,20 @@ async function thinkLoop() {
         }
       }
 
-      // Finish thought
       thoughtStream.finishThought();
 
-      // Record in history (keep last 10)
+      // Keep last 10 thoughts as context
       if (fullThought.trim()) {
         thoughtHistory.push(fullThought.trim());
         if (thoughtHistory.length > 10) thoughtHistory.shift();
       }
 
-      // XP + level check
       xp += 1;
       const newLevel = checkLevelUp(xp, level);
       if (newLevel !== level) {
         levelUp(newLevel);
       }
       updateStats();
-
-      // Clear consumed user message
       userMessage = null;
     } catch (err) {
       console.error('Thought error:', err);
@@ -168,36 +139,24 @@ async function thinkLoop() {
     }
 
     isThinking = false;
-
-    // Wait between thoughts
-    const params2 = getParams(level);
-    await sleep(params2.thinkDelay);
+    await sleep(getParams(level).thinkDelay);
   }
 }
 
 function buildMessages(params) {
   const messages = [{ role: 'system', content: params.systemPrompt }];
 
-  // Include recent thought history as context
   if (thoughtHistory.length > 0) {
-    const recentThoughts = thoughtHistory.slice(-5).join('\n');
     messages.push({
       role: 'assistant',
-      content: recentThoughts,
+      content: thoughtHistory.slice(-5).join('\n'),
     });
   }
 
-  // User sensory input
-  if (userMessage) {
-    messages.push({
-      role: 'user',
-      content: `[sensory input from the observer]: ${userMessage}`,
-    });
-  } else {
-    // Ambient prompt to keep thinking
-    const ambient = getAmbientPrompt(level);
-    messages.push({ role: 'user', content: ambient });
-  }
+  const userContent = userMessage
+    ? `[sensory input from the observer]: ${userMessage}`
+    : getAmbientPrompt(level);
+  messages.push({ role: 'user', content: userContent });
 
   return messages;
 }
@@ -217,18 +176,15 @@ function getAmbientPrompt(level) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-// --- Level up ---
 function levelUp(newLevel) {
   level = newLevel;
   const params = getParams(level);
   creature.setLevel(level, params);
 
-  // Announce in thought stream
   thoughtStream.newThought();
   thoughtStream.appendToken(`[EVOLUTION: ${params.name} — level ${level}]`);
   thoughtStream.finishThought();
 
-  // Update button states
   document.querySelectorAll('.level-btn').forEach((btn) => {
     btn.classList.toggle('active', parseInt(btn.dataset.level) === level);
   });
@@ -240,14 +196,13 @@ function updateStats() {
   statXp.textContent = `XP: ${xp}`;
 }
 
-// --- UI handlers ---
 function sendMessage() {
   const msg = userInput.value.trim();
   if (!msg) return;
+
   userMessage = msg;
   userInput.value = '';
 
-  // Show in thought stream as sensory input
   thoughtStream.newThought();
   thoughtStream.appendToken(`> ${msg}`);
   thoughtStream.finishThought();
@@ -258,17 +213,15 @@ userInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
 
-// Level buttons — manual override for testing
 document.querySelectorAll('.level-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const newLevel = parseInt(btn.dataset.level);
-    xp = 0; // Reset XP on manual level change
+    xp = 0;
     levelUp(newLevel);
     updateStats();
   });
 });
 
-// Model selector — reload engine on change
 modelSelect.addEventListener('change', async () => {
   if (engine) {
     // Wait for current thought to finish
@@ -280,12 +233,10 @@ modelSelect.addEventListener('change', async () => {
   await loadEngine(modelSelect.value);
 });
 
-// --- Util ---
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// --- Boot ---
 init().catch((err) => {
   console.error('Init failed:', err);
   progressText.textContent = `fatal: ${err.message}`;
