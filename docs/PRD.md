@@ -1,5 +1,29 @@
 # Autogen — Product Requirements Document
 
+## Spike Findings (Feb 2026)
+
+Results from v0.1.0 tech spike and v0.2.0 evolution lab:
+
+| Hypothesis | Result | Notes |
+|-----------|--------|-------|
+| WebGPU + WebLLM coexistence | **VALIDATED** | Both share GPU, 60fps during inference, no contention |
+| Thought stream emotional hook | **PARTIALLY VALIDATED** | Needs constrained prompts per level. L0 nonsense is expected but needs heartbeat rhythm to feel "alive" |
+| GPU contention | **NO ISSUES** | WebGPU handles separate pipelines (render + inference) gracefully |
+| Visual evolution | **VALIDATED (v0.2.0)** | 4 stages with morph transitions. Particles → sphere → nucleus+ring → multi-body |
+| Model switching | **FIXED (v0.2.0)** | Requires worker termination + 500ms delay. Was crashing without this. |
+| Small model quality | **CHALLENGING** | SmolLM2/Qwen at high temp produce garbled output. Need aggressive system prompt constraints + low top_p at L0 |
+| Performance ceiling | **~100 tok/s** | Qwen2.5-0.5B on M-series. SmolLM2-360M ~50 tok/s. Adequate for thought stream UX. |
+| Heartbeat/cycle rhythm | **VALIDATED (v0.2.0)** | sense→think→feel→rest cycle with visible pulse makes creature feel alive |
+
+### Key Learnings
+- Worker termination is critical for model switching — `engine = null` doesn't free VRAM
+- TSL shader node changes trigger WebGPU pipeline recompile — batch material updates
+- `top_p` is the best tool for constraining vocabulary at low levels
+- Morph animations (2s lerp) make level transitions dramatic and satisfying
+- Test panel (`?test=true`) is essential for rapid iteration on visual/behavioral parameters
+
+---
+
 ## 1. Vision
 
 **A small mind boots up in your browser tab.**

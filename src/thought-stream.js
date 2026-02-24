@@ -17,11 +17,7 @@ export class ThoughtStream {
     this.currentLine.className = 'thought-line';
     this.container.appendChild(this.currentLine);
     this.lineCount++;
-
-    while (this.lineCount > MAX_LINES) {
-      this.container.removeChild(this.container.firstChild);
-      this.lineCount--;
-    }
+    this._trim();
   }
 
   appendToken(token) {
@@ -49,6 +45,17 @@ export class ThoughtStream {
     this.currentLine = null;
   }
 
+  /** Add a subtle heartbeat marker between thought cycles */
+  addMarker(symbol) {
+    const marker = document.createElement('div');
+    marker.className = 'thought-marker';
+    marker.textContent = symbol;
+    this.container.appendChild(marker);
+    this.lineCount++;
+    this._trim();
+    this.container.scrollTop = this.container.scrollHeight;
+  }
+
   getTokPerSec() {
     return this.tokPerSec;
   }
@@ -58,11 +65,18 @@ export class ThoughtStream {
     this.lineCount = 0;
     this.currentLine = null;
   }
+
+  _trim() {
+    while (this.lineCount > MAX_LINES) {
+      this.container.removeChild(this.container.firstChild);
+      this.lineCount--;
+    }
+  }
 }
 
 function classifyThought(text) {
-  if (CURIOSITY_WORDS.some(w => text.includes(w))) return 'thought-curiosity';
-  if (DISTRESS_WORDS.some(w => text.includes(w))) return 'thought-distress';
-  if (JOY_WORDS.some(w => text.includes(w))) return 'thought-joy';
+  if (CURIOSITY_WORDS.some((w) => text.includes(w))) return 'thought-curiosity';
+  if (DISTRESS_WORDS.some((w) => text.includes(w))) return 'thought-distress';
+  if (JOY_WORDS.some((w) => text.includes(w))) return 'thought-joy';
   return 'thought-default';
 }

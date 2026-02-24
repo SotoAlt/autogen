@@ -3,17 +3,25 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { color, float } from 'three/tsl';
 
 export async function createTerrarium(container) {
+  console.log(`[terrarium] WebGPU available: ${!!navigator.gpu}`);
+
   const renderer = new THREE.WebGPURenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.8;
+  renderer.toneMappingExposure = 1.2;
   container.appendChild(renderer.domElement);
-  await renderer.init();
+
+  try {
+    await renderer.init();
+  } catch (err) {
+    console.error('[terrarium] Renderer init failed:', err);
+    throw err;
+  }
+  console.log('[terrarium] Renderer initialized');
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a0a);
-  scene.fog = new THREE.FogExp2(0x0a0a0a, 0.08);
+  scene.background = new THREE.Color(0x0e0e14);
 
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 3, 6);
@@ -37,10 +45,10 @@ export async function createTerrarium(container) {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Grid
-  const grid = new THREE.GridHelper(10, 20, 0x1a1a2e, 0x1a1a2e);
+  // Grid — brighter so scene isn't pitch black
+  const grid = new THREE.GridHelper(10, 20, 0x2a2a4e, 0x1a1a3e);
   grid.position.y = 0.001;
-  grid.material.opacity = 0.3;
+  grid.material.opacity = 0.5;
   grid.material.transparent = true;
   scene.add(grid);
 
@@ -50,7 +58,7 @@ export async function createTerrarium(container) {
   glassMat.roughnessNode = float(0.1);
   glassMat.metalnessNode = float(0.0);
   glassMat.transparent = true;
-  glassMat.opacity = 0.08;
+  glassMat.opacity = 0.12;
   glassMat.side = THREE.DoubleSide;
 
   const wallGeo = new THREE.PlaneGeometry(4, 3);
@@ -67,16 +75,16 @@ export async function createTerrarium(container) {
     scene.add(wall);
   }
 
-  // Lighting
-  scene.add(new THREE.HemisphereLight(0x1a1a3e, 0x0a0a0a, 0.6));
+  // Lighting — bright enough to see environment
+  scene.add(new THREE.HemisphereLight(0x3344aa, 0x111122, 1.0));
 
-  const dir = new THREE.DirectionalLight(0xff6b2b, 0.8);
+  const dir = new THREE.DirectionalLight(0xff6b2b, 1.2);
   dir.position.set(3, 5, 2);
   scene.add(dir);
 
-  scene.add(new THREE.AmbientLight(0x222244, 0.3));
+  scene.add(new THREE.AmbientLight(0x334466, 0.6));
 
-  const innerLight = new THREE.PointLight(0x00ff88, 0.3, 8);
+  const innerLight = new THREE.PointLight(0x00ff88, 0.8, 8);
   innerLight.position.set(0, 2, 0);
   scene.add(innerLight);
 

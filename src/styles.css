@@ -264,3 +264,119 @@ body {
   background: #ff6b2b;
   color: #0a0a0a;
 }
+
+#stat-phase { color: #ff6b8a; }
+
+/* Heartbeat markers */
+.thought-marker {
+  text-align: center;
+  color: #2a2a3e;
+  font-size: 10px;
+  margin: 2px 0;
+  opacity: 0.5;
+  letter-spacing: 4px;
+}
+
+/* Test Panel */
+#test-panel {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 240px;
+  z-index: 20;
+  background: rgba(10, 10, 14, 0.92);
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+  font-size: 11px;
+  backdrop-filter: blur(8px);
+}
+
+.tp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #ff6b2b;
+  border-bottom: 1px solid #1a1a2e;
+}
+
+.tp-header button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+#tp-body {
+  padding: 8px 12px;
+}
+
+.tp-section {
+  margin-bottom: 10px;
+}
+
+.tp-section label {
+  display: flex;
+  justify-content: space-between;
+  color: #888;
+  font-size: 10px;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.tp-section label span {
+  color: #aaa;
+}
+
+.tp-section input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a1a2e;
+  border-radius: 2px;
+  outline: none;
+}
+
+.tp-section input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ff6b2b;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.tp-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.tp-buttons button {
+  flex: 1;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 10px;
+  background: #111;
+  color: #888;
+  border: 1px solid #222;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.tp-buttons button:hover {
+  border-color: #ff6b2b;
+  color: #ff6b2b;
+}
+
+.tp-status {
+  color: #555;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
