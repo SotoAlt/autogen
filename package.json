@@ -1,0 +1,8 @@
+{
+  "name": "autogen",
+  "version": "0.0.1",
+  "description": "Browser-native artificial life — a small LLM creature that lives in your tab, boots from noise to coherent thought, and evolves through user care and environmental pressure.",
+  "private": true,
+  "type": "module",
+  "license": "MIT"
+}
