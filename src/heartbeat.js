@@ -1,20 +1,18 @@
 /**
  * Heartbeat / pulse cycle system.
- * Gives the creature internal rhythms: SENSE → THINK → FEEL → REST
+ * Much longer periods than v0.2 — gated by DNA and evolution level.
+ * Phases: SENSE → THINK → FEEL → REST
  */
+
+import { getParams } from './intelligence.js';
 
 const PHASES = ['sense', 'think', 'feel', 'rest'];
 
-// Per-level heartbeat configs
-const HEARTBEAT_LEVELS = [
-  { period: 2.0, jitter: 1.5, skipChance: 0.3 },   // L0: erratic, often skips phases
-  { period: 2.5, jitter: 0.5, skipChance: 0.1 },   // L1: steadier
-  { period: 2.5, jitter: 0.2, skipChance: 0.0 },   // L2: consistent, longer think
-  { period: 3.0, jitter: 0.1, skipChance: 0.0 },   // L3: calm, contemplative
-];
+const FIRST_CYCLE_DELAY = 10; // seconds — immediate feedback on page load
 
 export class Heartbeat {
-  constructor() {
+  constructor(dna) {
+    this.dna = dna;
     this.level = 0;
     this.phase = 'rest';
     this.phaseIndex = 3;
@@ -24,24 +22,66 @@ export class Heartbeat {
     this.bpm = 0;
     this.beatCount = 0;
     this.lastBeatTime = 0;
+    this.isFirstCycle = true;
+    this._onThink = null;
     this._listeners = [];
+
+    // Countdown tracking
+    this.cycleElapsed = 0;
+    this.cycleDuration = FIRST_CYCLE_DELAY;
+
+    // Start first cycle quickly
+    this.phaseDuration = FIRST_CYCLE_DELAY;
   }
 
   setLevel(level) {
-    this.level = Math.min(level, HEARTBEAT_LEVELS.length - 1);
+    this.level = Math.min(level, 3);
   }
 
   onPhaseChange(fn) {
     this._listeners.push(fn);
   }
 
-  getPeriod() {
-    const cfg = HEARTBEAT_LEVELS[this.level];
-    return cfg.period + (Math.random() - 0.5) * 2 * cfg.jitter;
+  /** Register callback for think phase — main.js uses this to trigger LLM */
+  onThinkPhase(fn) {
+    this._onThink = fn;
+  }
+
+  /** Get the full cycle period in seconds (DNA-adjusted) */
+  getCyclePeriod() {
+    if (this.isFirstCycle) return FIRST_CYCLE_DELAY;
+    const params = getParams(this.level);
+    const base = params.basePeriod;
+    // DNA heartbeatSpeed: higher = faster = shorter period
+    return base / this.dna.heartbeatSpeed;
+  }
+
+  /** Seconds remaining until next think phase */
+  get countdown() {
+    if (this.phase === 'think') return 0;
+    // Time left in current phase + time through remaining phases until think
+    let remaining = this.phaseDuration - this.elapsed;
+    let idx = this.phaseIndex;
+    while (true) {
+      idx = (idx + 1) % PHASES.length;
+      if (PHASES[idx] === 'think') break;
+      // Estimate durations of intermediate phases
+      remaining += this.phase === 'sense' ? 0.5 : this.getCyclePeriod() * 0.15;
+    }
+    return Math.max(0, remaining);
+  }
+
+  /** Bypass heartbeat wait — immediate think cycle (rate limited externally) */
+  triggerReflex() {
+    // Jump to sense phase, which will advance to think
+    this.elapsed = this.phaseDuration;
+    this.phaseIndex = (PHASES.indexOf('think') - 1 + PHASES.length) % PHASES.length;
+    this.phase = PHASES[this.phaseIndex];
   }
 
   update(delta) {
     this.elapsed += delta;
+    this.cycleElapsed += delta;
 
     // Pulse decays toward 0
     this.pulse *= 0.92;
@@ -53,24 +93,33 @@ export class Heartbeat {
   }
 
   _advance() {
-    const cfg = HEARTBEAT_LEVELS[this.level];
-
-    // L0 can skip phases randomly
-    let nextIndex = (this.phaseIndex + 1) % PHASES.length;
-    if (cfg.skipChance > 0 && Math.random() < cfg.skipChance) {
-      nextIndex = (nextIndex + 1) % PHASES.length;
-    }
-
+    const nextIndex = (this.phaseIndex + 1) % PHASES.length;
     this.phaseIndex = nextIndex;
     this.phase = PHASES[this.phaseIndex];
 
+    const cyclePeriod = this.getCyclePeriod();
+
     // Duration per phase
-    const period = this.getPeriod();
     switch (this.phase) {
-      case 'sense': this.phaseDuration = 0.3; break;
-      case 'think': this.phaseDuration = period * 0.5; break;
-      case 'feel':  this.phaseDuration = 0.3; break;
-      case 'rest':  this.phaseDuration = period * 0.3; break;
+      case 'sense':
+        this.phaseDuration = 0.5;
+        // New cycle starts
+        this.cycleElapsed = 0;
+        this.cycleDuration = cyclePeriod;
+        break;
+      case 'think':
+        this.phaseDuration = 60; // long — main.js resolves it via callback
+        break;
+      case 'feel':
+        this.phaseDuration = 1.0;
+        break;
+      case 'rest':
+        this.phaseDuration = Math.max(1, cyclePeriod * 0.8);
+        if (this.isFirstCycle) {
+          this.isFirstCycle = false;
+          this.phaseDuration = Math.max(1, this.getCyclePeriod() * 0.8);
+        }
+        break;
     }
 
     // Beat pulse on sense phase (start of cycle)
@@ -84,10 +133,21 @@ export class Heartbeat {
       this.lastBeatTime = now;
     }
 
+    // Fire think callback
+    if (this.phase === 'think' && this._onThink) {
+      this._onThink();
+    }
+
     for (const fn of this._listeners) fn(this.phase);
   }
 
-  /** Is the creature in "thinking" mode? Used by main.js to gate LLM calls */
+  /** Signal that thinking is done — advance past think phase */
+  thinkComplete() {
+    if (this.phase === 'think') {
+      this.elapsed = this.phaseDuration; // force advance
+    }
+  }
+
   isThinkPhase() {
     return this.phase === 'think';
   }

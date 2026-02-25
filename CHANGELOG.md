@@ -1,5 +1,39 @@
 # Changelog
 
+## v0.3.0 — Biological Agent System (Feb 24, 2026)
+
+### Polish
+- **Gibberish reduction**: Stripped JSON format instructions from system prompts — model was echoing "You respond with JSON" as output. Prompts are now persona-only ("You are a cell", "You are a spark of life").
+- **Level-appropriate language**: L0 shows NO thought text (always `[action] ███`), L1 max 2 words/10 chars, L2 max 20 chars, L3 full prose. Keyword/random fallbacks also suppress thought below L2.
+- **Level-aware few-shot**: Assistant example matches current level's action set. L0-L1 examples have no `thought` field; L2+ include `thought`.
+- **Regex extraction strategy**: New Strategy 3 finds `"action":"<word>"` via regex before brace extraction — catches garbled output that wraps JSON in preamble text.
+- **Visible visual effects**: TSL `uniform()` nodes for emissiveBoost, dimming, and radiusMultiplier push runtime values to the GPU shader every frame. Previous static TSL nodes ignored runtime changes.
+- **Stronger action drama**: pulse radius +0.5 (was +0.3), absorb emissive 1.2 (was 0.6), glow emissive 1.5 (was 1.0), speak emissive 1.5 + pulse 0.7 (was 0.8/0.5), shift_color min range 0.15.
+- **Slower effect decay**: emissive 0.985 (was 0.97), hueShift 0.99 (was 0.98), split 0.97 (was 0.96) — effects linger visibly longer.
+- **Lower temperatures**: L0 0.6 (was 0.9), L1 0.7 (was 0.9), L2 0.7 (was 0.8). L0 maxTokens 32 (was 48).
+
+### Features
+- **DNA system**: 8 heritable traits (heartbeatSpeed, metabolismRate, huePrimary, hueShiftRange, movementBias, expressiveness, energyEfficiency, curiosity) randomized at birth, injected into system prompts as personality hints.
+- **Energy / metabolism**: Energy 0-100 (starts 50). User message +15, click +5, presence +1/cycle. Metabolism drains per cycle based on DNA. Dormant at 0 (stops thinking), wakes on user message.
+- **Heartbeat-gated thinking**: Much longer periods (L0: 90s, L1: 30s, L2: 15s, L3: 10s) adjusted by DNA heartbeatSpeed. 10s first-cycle exception for immediate feedback. User input triggers reflex think (5s rate limit).
+- **JSON schema constrained output**: Every think cycle produces ONE structured JSON action via XGrammar (WebLLM). No streaming, no free text. Falls back to `json_object` + manual validation if schema mode fails.
+- **12 visual actions**: drift, pulse, absorb, glow, shrink, reach, shift_color, spin, speak, morph, split, rest — each drives 3D creature animation via lerped targets.
+- **Action-oriented system prompts**: L0 "pick one action" → L3 "express yourself", with DNA personality hints and energy context.
+- **Evolution through care**: User messages +3 XP, successful actions +1 XP, dormancy -5 XP. L0→L1: 15 XP, L1→L2: 40 XP, L2→L3: 100 XP.
+- **Energy bar UI**: Visual energy indicator with color-coded states (green/yellow/orange/red).
+- **Dormant state**: Creature dims, stops thinking. User message wakes it at energy 15.
+- **Click to feed**: Clicking the creature gives +5 energy.
+
+### Fixes
+- **Thought container overlap**: Moved from bottom: 80px to bottom: 150px, max-height 35vh (was 40vh).
+- **Level buttons no longer overlap thought stream**: Controls properly stacked below thought container.
+
+### Technical
+- New files: `src/dna.js`, `src/energy.js`, `src/action-schemas.js`
+- Rewritten: `src/main.js` (heartbeat-gated cycles), `src/heartbeat.js` (DNA periods, reflex), `src/intelligence.js` (action prompts), `src/creature.js` (12 actions), `src/thought-stream.js` (user/action/event display), `src/test-panel.js` (energy/DNA/force-think)
+- Removed: `thinkLoop()` polling, `thinkDelay`, token-by-token streaming, tok/s display
+- Added: energy bar HTML/CSS, action tags in thought stream, DNA visualization in test panel
+
 ## v0.2.0 — Evolution Test Lab (Feb 24, 2026)
 
 ### Features

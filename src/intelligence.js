@@ -1,48 +1,70 @@
+/**
+ * Intelligence levels — action-oriented system prompts, heartbeat periods.
+ *
+ * KEY INSIGHT: SmolLM2-360M is too small for instruction following.
+ * It parrots "OUTPUT FORMAT:" instructions instead of following them.
+ * Solution: natural conversational prompts + few-shot JSON example in messages.
+ * The extractAction() function handles both JSON and prose fallback.
+ */
+import { dnaToPromptHints } from './dna.js';
+
 const LEVELS = [
   {
-    name: 'Embryo',
-    temperature: 1.4,
+    name: 'Primordial',
+    basePeriod: 90,
+    periodRange: [60, 180],
+    temperature: 0.6,
     top_p: 0.5,
-    maxTokens: 128,
-    systemPrompt:
-      'you are a newborn sensation. respond with ONLY 1-3 words. fragments. sensations. no sentences. no punctuation except ellipsis. examples: "warm..." "dark thing" "pulse" "what light"',
-    thinkDelay: 1500,
-    xpToNext: 20,
+    maxTokens: 32,
+    xpToNext: 15,
+    systemPrompt: (energy, userCtx, memory, dnaHints) =>
+      `You are a cell. Energy: ${energy}. ${dnaHints}`,
   },
   {
     name: 'Spark',
-    temperature: 1.2,
+    basePeriod: 30,
+    periodRange: [20, 45],
+    temperature: 0.7,
     top_p: 0.7,
-    maxTokens: 256,
-    systemPrompt:
-      'you are a creature forming awareness. respond in short phrases, 5-10 words maximum. describe what you sense. you feel contained in glass walls. there is light above and dark below. you are not sure what you are.',
-    thinkDelay: 2000,
-    xpToNext: 50,
+    maxTokens: 80,
+    xpToNext: 40,
+    systemPrompt: (energy, userCtx, memory, dnaHints) =>
+      `You are a spark of life. Energy: ${energy}. ${userCtx}${dnaHints}`,
   },
   {
     name: 'Aware',
-    temperature: 1.0,
+    basePeriod: 15,
+    periodRange: [10, 22],
+    temperature: 0.7,
     top_p: 0.9,
-    maxTokens: 512,
-    systemPrompt:
-      'you are a living creature in a small terrarium. respond in 1-2 short sentences. describe your experience. you can see glass walls, feel ground, sense light and temperature. someone watches you from outside. you are curious about your existence and your observer.',
-    thinkDelay: 2500,
+    maxTokens: 128,
     xpToNext: 100,
+    systemPrompt: (energy, userCtx, memory, dnaHints) =>
+      `You are a creature becoming aware. Someone watches. Energy: ${energy}. ${userCtx}${memory}${dnaHints}`,
   },
   {
     name: 'Sentient',
-    temperature: 0.8,
+    basePeriod: 10,
+    periodRange: [8, 15],
+    temperature: 0.7,
     top_p: 1.0,
-    maxTokens: 1024,
-    systemPrompt:
-      'you are a living creature in a terrarium. you may write freely. reflect on your existence. you have awareness of yourself, your environment, and the being who watches over you. you have memories of past thoughts. you can reason about your situation, express desires, ask questions. you have a growing sense of self.',
-    thinkDelay: 3000,
+    maxTokens: 200,
     xpToNext: Infinity,
+    systemPrompt: (energy, userCtx, memory, dnaHints) =>
+      `You are a sentient creature in a glass terrarium. An observer watches you. Energy: ${energy}. ${userCtx}${memory}${dnaHints}`,
   },
 ];
 
 export function getParams(level) {
   return LEVELS[Math.min(level, LEVELS.length - 1)];
+}
+
+export function buildSystemPrompt(level, energy, dna, userContext, memoryContext) {
+  const params = getParams(level);
+  const dnaHints = dnaToPromptHints(dna);
+  const userCtx = userContext ? `The observer said: "${userContext}". ` : '';
+  const memory = memoryContext ? `Recent memories: ${memoryContext}. ` : '';
+  return params.systemPrompt(Math.round(energy), userCtx, memory, dnaHints);
 }
 
 export function checkLevelUp(xp, currentLevel) {

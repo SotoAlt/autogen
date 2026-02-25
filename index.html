@@ -12,20 +12,29 @@
   <div id="loading-overlay">
     <div id="loading-inner">
       <div id="loading-title">AUTOGEN</div>
-      <div id="loading-subtitle">initializing neural substrate...</div>
+      <div id="loading-subtitle">artificial life</div>
+      <div id="loading-spinner"></div>
+      <div id="loading-stage">initializing</div>
+      <div id="loading-detail">preparing neural substrate...</div>
       <div id="progress-bar-container">
-        <div id="progress-bar"></div>
+        <div id="progress-bar" class="indeterminate"></div>
       </div>
-      <div id="progress-text">preparing environment</div>
+      <div id="progress-text"></div>
+      <div id="loading-size">~376 MB model download on first visit</div>
     </div>
   </div>
 
   <div id="stats-overlay">
     <span id="stat-fps">-- FPS</span>
-    <span id="stat-toks">-- tok/s</span>
+    <span id="stat-energy">E:50</span>
     <span id="stat-level">L0</span>
     <span id="stat-xp">XP: 0</span>
     <span id="stat-phase">rest</span>
+  </div>
+
+  <div id="energy-bar-container">
+    <div id="energy-bar-fill"></div>
+    <span id="energy-value">50</span>
   </div>
 
   <div id="thought-container">

@@ -54,11 +54,40 @@ body {
   letter-spacing: 2px;
 }
 
+#loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 20px;
+  border: 2px solid #1a1a1a;
+  border-top-color: #ff6b2b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#loading-stage {
+  font-size: 13px;
+  color: #ff6b2b;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+  min-height: 20px;
+}
+
+#loading-detail {
+  font-size: 11px;
+  color: #444;
+  margin-bottom: 16px;
+  min-height: 16px;
+}
+
 #progress-bar-container {
   width: 100%;
-  height: 2px;
+  height: 4px;
   background: #1a1a1a;
-  border-radius: 1px;
+  border-radius: 2px;
   overflow: hidden;
   margin-bottom: 12px;
 }
@@ -70,9 +99,26 @@ body {
   transition: width 0.3s;
 }
 
+/* Indeterminate animation when progress is 0 */
+#progress-bar.indeterminate {
+  width: 30%;
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 #progress-text {
   font-size: 11px;
   color: #555;
+}
+
+#loading-size {
+  font-size: 10px;
+  color: #333;
+  margin-top: 8px;
 }
 
 /* Stats overlay */
@@ -96,17 +142,49 @@ body {
 }
 
 #stat-fps { color: #00ff88; }
-#stat-toks { color: #ff6b2b; }
+#stat-energy { color: #ffaa22; }
 #stat-level { color: #6b8aff; }
 #stat-xp { color: #888; }
+#stat-phase { color: #ff6b8a; }
 
-/* Thought stream */
+/* Energy bar */
+#energy-bar-container {
+  position: fixed;
+  top: 48px;
+  right: 16px;
+  width: 200px;
+  height: 6px;
+  z-index: 10;
+  background: #1a1a1a;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #222;
+}
+
+#energy-bar-fill {
+  height: 100%;
+  width: 50%;
+  background: #00ff88;
+  transition: width 0.5s, background 0.5s;
+  border-radius: 3px;
+}
+
+#energy-value {
+  position: absolute;
+  right: 4px;
+  top: -1px;
+  font-size: 8px;
+  color: #666;
+  line-height: 6px;
+}
+
+/* Thought stream — positioned above controls */
 #thought-container {
   position: fixed;
-  bottom: 80px;
+  bottom: 150px;
   right: 16px;
   width: 380px;
-  max-height: 40vh;
+  max-height: 35vh;
   z-index: 10;
   background: rgba(10, 10, 10, 0.85);
   border: 1px solid #1a1a2e;
@@ -129,7 +207,7 @@ body {
   padding: 8px 12px;
   overflow-y: auto;
   flex: 1;
-  max-height: calc(40vh - 36px);
+  max-height: calc(35vh - 36px);
 }
 
 .thought-line {
@@ -152,6 +230,45 @@ body {
 .thought-curiosity { color: #6b8aff; }
 .thought-distress { color: #ff4444; }
 .thought-joy { color: #00ff88; }
+
+.thought-user {
+  color: #ff6b2b;
+  font-style: italic;
+}
+
+.thought-event {
+  color: #6b8aff;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+
+.thought-action {
+  color: #555;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.thought-thinking {
+  color: #444;
+  animation: thinking 1s infinite;
+}
+
+@keyframes thinking {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+.action-tag {
+  color: #ffaa22;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.thought-text {
+  color: #ccc;
+}
 
 /* Scrollbar */
 #thought-stream::-webkit-scrollbar {
@@ -265,8 +382,6 @@ body {
   color: #0a0a0a;
 }
 
-#stat-phase { color: #ff6b8a; }
-
 /* Heartbeat markers */
 .thought-marker {
   text-align: center;
@@ -277,18 +392,20 @@ body {
   letter-spacing: 4px;
 }
 
-/* Test Panel */
+/* ─── Test Panel ─────────────────────────────────────── */
 #test-panel {
   position: fixed;
   top: 16px;
   left: 16px;
-  width: 240px;
+  width: 260px;
   z-index: 20;
   background: rgba(10, 10, 14, 0.92);
   border: 1px solid #1a1a2e;
   border-radius: 6px;
   font-size: 11px;
   backdrop-filter: blur(8px);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .tp-header {
@@ -379,4 +496,55 @@ body {
   color: #555;
   font-size: 10px;
   letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.tp-dna-title {
+  color: #666;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.tp-dna-row {
+  display: flex;
+  gap: 6px;
+  font-size: 9px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.tp-dna-key {
+  width: 100px;
+  color: #777;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tp-dna-bar {
+  color: #ff6b2b;
+  letter-spacing: -1px;
+  font-size: 8px;
+}
+
+.tp-dna-val {
+  color: #888;
+  width: 30px;
+  text-align: right;
+}
+
+.tp-actions {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.tp-action-line {
+  font-size: 9px;
+  color: #555;
+  line-height: 1.5;
+  border-left: 2px solid #1a1a2e;
+  padding-left: 6px;
+  margin-bottom: 2px;
 }

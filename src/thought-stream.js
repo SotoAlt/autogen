@@ -1,48 +1,72 @@
 const MAX_LINES = 50;
-const CURIOSITY_WORDS = ['?', 'what', 'why', 'how', 'wonder', 'curious'];
-const DISTRESS_WORDS = ['pain', 'hurt', 'dark', 'cold', 'afraid', 'lost', 'alone', 'nothing'];
-const JOY_WORDS = ['warm', 'light', 'good', 'happy', 'safe', 'beautiful', 'love'];
 
 export class ThoughtStream {
   constructor() {
     this.container = document.getElementById('thought-stream');
     this.lineCount = 0;
     this.currentLine = null;
-    this.tokPerSec = 0;
-    this._tokenTimestamps = [];
   }
 
-  newThought() {
-    this.currentLine = document.createElement('div');
-    this.currentLine.className = 'thought-line';
-    this.container.appendChild(this.currentLine);
-    this.lineCount++;
-    this._trim();
+  /** Display a user message in the stream */
+  addUserMessage(text) {
+    const line = this._createLine();
+    line.classList.add('thought-user');
+    line.textContent = `> ${text}`;
   }
 
-  appendToken(token) {
-    if (!this.currentLine) this.newThought();
+  /** Display a creature thought + action tag */
+  addThought(thought, action) {
+    if (!thought && !action) return;
+    const line = this._createLine();
 
-    const span = document.createElement('span');
-    span.textContent = token;
-    span.className = 'thought-token';
-    this.currentLine.appendChild(span);
-
-    const now = performance.now();
-    this._tokenTimestamps.push(now);
-    while (this._tokenTimestamps.length > 0 && now - this._tokenTimestamps[0] > 1000) {
-      this._tokenTimestamps.shift();
+    if (action) {
+      const tag = document.createElement('span');
+      tag.className = 'action-tag';
+      tag.textContent = `[${action}]`;
+      line.appendChild(tag);
     }
-    this.tokPerSec = this._tokenTimestamps.length;
 
-    this.container.scrollTop = this.container.scrollHeight;
+    if (thought) {
+      const text = document.createElement('span');
+      text.className = 'thought-text';
+      text.textContent = ` ${thought}`;
+      line.appendChild(text);
+
+      // Classify for color
+      line.classList.add(classifyThought(thought.toLowerCase()));
+    } else {
+      line.classList.add('thought-default');
+    }
   }
 
-  finishThought() {
-    if (!this.currentLine) return;
-    const text = this.currentLine.textContent.toLowerCase();
-    this.currentLine.classList.add(classifyThought(text));
-    this.currentLine = null;
+  /** Display an action indicator (no thought text) */
+  addAction(type, intensity) {
+    const line = this._createLine();
+    line.classList.add('thought-action');
+    const bar = '█'.repeat(Math.round(intensity * 5));
+    line.textContent = `[${type}] ${bar}`;
+  }
+
+  /** Display a system event (evolution, wake, etc.) */
+  addEvent(text) {
+    const line = this._createLine();
+    line.classList.add('thought-event');
+    line.textContent = text;
+  }
+
+  /** Thinking indicator */
+  showThinking() {
+    this._thinkingLine = this._createLine();
+    this._thinkingLine.classList.add('thought-thinking');
+    this._thinkingLine.textContent = '...';
+  }
+
+  hideThinking() {
+    if (this._thinkingLine) {
+      this._thinkingLine.remove();
+      this._thinkingLine = null;
+      this.lineCount--;
+    }
   }
 
   /** Add a subtle heartbeat marker between thought cycles */
@@ -56,14 +80,20 @@ export class ThoughtStream {
     this.container.scrollTop = this.container.scrollHeight;
   }
 
-  getTokPerSec() {
-    return this.tokPerSec;
-  }
-
   clear() {
     this.container.innerHTML = '';
     this.lineCount = 0;
     this.currentLine = null;
+  }
+
+  _createLine() {
+    const line = document.createElement('div');
+    line.className = 'thought-line';
+    this.container.appendChild(line);
+    this.lineCount++;
+    this._trim();
+    this.container.scrollTop = this.container.scrollHeight;
+    return line;
   }
 
   _trim() {
@@ -73,6 +103,10 @@ export class ThoughtStream {
     }
   }
 }
+
+const CURIOSITY_WORDS = ['?', 'what', 'why', 'how', 'wonder', 'curious'];
+const DISTRESS_WORDS = ['pain', 'hurt', 'dark', 'cold', 'afraid', 'lost', 'alone', 'nothing'];
+const JOY_WORDS = ['warm', 'light', 'good', 'happy', 'safe', 'beautiful', 'love'];
 
 function classifyThought(text) {
   if (CURIOSITY_WORDS.some((w) => text.includes(w))) return 'thought-curiosity';
