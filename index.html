@@ -49,11 +49,23 @@
       <button class="level-btn" data-level="2">L2</button>
       <button class="level-btn" data-level="3">L3</button>
     </div>
-    <div id="model-selector">
+    <div id="creature-actions">
+      <button id="new-creature-btn">New Creature</button>
+      <span id="creature-age">Gen 1</span>
+    </div>
+    <div id="selectors-row">
+      <select id="runtime-select">
+        <option value="wllama">CPU (wllama)</option>
+        <option value="webllm">GPU (WebLLM)</option>
+      </select>
       <select id="model-select">
-        <option value="SmolLM2-360M-Instruct-q4f16_1-MLC">SmolLM2-360M (fast)</option>
-        <option value="SmolLM2-135M-Instruct-q0f16-MLC">SmolLM2-135M (tiny)</option>
-        <option value="Qwen2.5-0.5B-Instruct-q4f16_1-MLC">Qwen2.5-0.5B</option>
+        <!-- Populated dynamically by main.js -->
+      </select>
+      <select id="strategy-select">
+        <option value="legacy">Legacy</option>
+        <option value="plan-queue">Plan Queue</option>
+        <option value="event-driven">Event-Driven</option>
+        <option value="layered">Layered</option>
       </select>
     </div>
     <div id="input-row">

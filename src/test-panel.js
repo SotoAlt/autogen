@@ -1,18 +1,24 @@
 /**
  * Developer test panel for exploring creature biology.
  * Activated with ?test=true URL parameter.
+ * v0.5.0: Added memory stats and debug controls.
  */
 
 export class TestPanel {
-  constructor({ creature, heartbeat, energySystem, dna, onLevelChange, onForceThink, onFeed, getState }) {
+  constructor({ creature, heartbeat, energySystem, dna, memory, conversation, onLevelChange, onForceThink, onFeed, onSave, onClearMemory, getState, metrics }) {
     this.creature = creature;
     this.heartbeat = heartbeat;
     this.energySystem = energySystem;
     this.dna = dna;
+    this.memory = memory || null;
+    this.conversation = conversation || null;
     this.onLevelChange = onLevelChange;
     this.onForceThink = onForceThink;
     this.onFeed = onFeed;
+    this.onSave = onSave || (() => {});
+    this.onClearMemory = onClearMemory || (() => {});
     this.getState = getState;
+    this.metrics = metrics || { actionTimestamps: [], inferenceTimestamps: [], inferenceDurations: [], userReactionLatencies: [] };
 
     this.panel = document.createElement('div');
     this.panel.id = 'test-panel';
@@ -41,6 +47,20 @@ export class TestPanel {
         <div class="tp-section tp-buttons">
           <button id="tp-reset">Reset</button>
           <button id="tp-snapshot">Snapshot</button>
+          <button id="tp-reset-metrics">Reset Metrics</button>
+        </div>
+        <div class="tp-section">
+          <div class="tp-dna-title">METRICS</div>
+          <div id="tp-metrics" class="tp-status"></div>
+        </div>
+        <div class="tp-section">
+          <div class="tp-dna-title">MEMORY</div>
+          <div id="tp-memory" class="tp-status"></div>
+          <div id="tp-memory-entries" class="tp-actions"></div>
+          <div class="tp-buttons" style="margin-top:4px">
+            <button id="tp-clear-memory">Clear Memory</button>
+            <button id="tp-force-save">Force Save</button>
+          </div>
         </div>
         <div class="tp-section">
           <div class="tp-dna-title">DNA</div>
@@ -107,6 +127,22 @@ export class TestPanel {
       const state = this.getState();
       console.log('[test-panel] Snapshot:', JSON.stringify(state, null, 2));
     });
+
+    $('#tp-reset-metrics').addEventListener('click', () => {
+      this.metrics.actionTimestamps.length = 0;
+      this.metrics.actionNames.length = 0;
+      this.metrics.inferenceTimestamps.length = 0;
+      this.metrics.inferenceDurations.length = 0;
+      this.metrics.userReactionLatencies.length = 0;
+    });
+
+    $('#tp-clear-memory').addEventListener('click', () => {
+      this.onClearMemory();
+    });
+
+    $('#tp-force-save').addEventListener('click', () => {
+      this.onSave();
+    });
   }
 
   _slider(id, callback) {
@@ -121,8 +157,8 @@ export class TestPanel {
   _renderDNA() {
     const container = this.panel.querySelector('#tp-dna');
     const entries = Object.entries(this.dna).map(([key, val]) => {
-      const bar = '█'.repeat(Math.round(val * 10));
-      const empty = '░'.repeat(10 - Math.round(val * 10));
+      const bar = '\u2588'.repeat(Math.round(val * 10));
+      const empty = '\u2591'.repeat(10 - Math.round(val * 10));
       return `<div class="tp-dna-row"><span class="tp-dna-key">${key}</span><span class="tp-dna-bar">${bar}${empty}</span><span class="tp-dna-val">${val.toFixed(2)}</span></div>`;
     });
     container.innerHTML = entries.join('');
@@ -139,7 +175,61 @@ export class TestPanel {
       `Energy: ${state.energy} (${state.energyState})`,
       `Next: ${state.countdown}s`,
       `Thinking: ${state.isThinking}`,
+      `Runtime: ${state.runtime || 'unknown'}`,
+      `Strategy: ${state.strategy || 'unknown'}`,
+      `Gen: ${state.generation || 1}`,
     ].join('<br>');
+
+    // Update metrics
+    const metricsEl = this.panel.querySelector('#tp-metrics');
+    if (metricsEl) {
+      const now = performance.now();
+      const countRecent = (arr) => arr.filter(t => now - t < 60000).length;
+      const avg = (arr) => arr.length > 0
+        ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+        : 0;
+
+      const last20Names = (this.metrics.actionNames || []).slice(-20);
+      const uniqueRatio = last20Names.length > 0
+        ? (new Set(last20Names).size / last20Names.length).toFixed(2)
+        : 'N/A';
+
+      metricsEl.innerHTML = [
+        `Actions/min: ${countRecent(this.metrics.actionTimestamps)}`,
+        `Inferences/min: ${countRecent(this.metrics.inferenceTimestamps)}`,
+        `Unique ratio: ${uniqueRatio}`,
+        `Avg inference: ${avg(this.metrics.inferenceDurations)}ms`,
+        `Avg user->react: ${avg(this.metrics.userReactionLatencies)}ms`,
+      ].join('<br>');
+    }
+
+    // Update memory stats
+    const memoryEl = this.panel.querySelector('#tp-memory');
+    if (memoryEl && this.memory) {
+      const shortTerm = this.memory.getShortTerm();
+      const longTerm = this.memory.getLongTerm();
+      memoryEl.innerHTML = [
+        `Short-term: ${shortTerm.length}`,
+        `Long-term: ${longTerm.length}`,
+        `Total: ${this.memory.size}`,
+        `Conversations: ${this.conversation ? this.conversation.length : 0}`,
+      ].join('<br>');
+    }
+
+    // Update recent memory entries
+    const memEntriesEl = this.panel.querySelector('#tp-memory-entries');
+    if (memEntriesEl && this.memory) {
+      const recent = this.memory.getShortTerm().slice(-5);
+      memEntriesEl.innerHTML = '';
+      for (const entry of recent) {
+        const line = document.createElement('div');
+        line.className = 'tp-action-line';
+        const age = Math.round((Date.now() - entry.timestamp) / 1000);
+        const preview = entry.content.slice(0, 30);
+        line.textContent = `[${entry.type}] (${entry.importance.toFixed(1)}) ${preview} — ${age}s ago`;
+        memEntriesEl.appendChild(line);
+      }
+    }
 
     // Update action log
     const actionsEl = this.panel.querySelector('#tp-actions');
@@ -147,9 +237,8 @@ export class TestPanel {
       const a = this.creature.currentAction;
       const line = document.createElement('div');
       line.className = 'tp-action-line';
-      line.textContent = `${a.action} (${(a.intensity ?? 0).toFixed(1)})${a.thought ? ' — ' + a.thought.slice(0, 30) : ''}`;
+      line.textContent = `${a.action} (${(a.intensity ?? 0).toFixed(1)})${a.thought ? ' \u2014 ' + a.thought.slice(0, 30) : ''}`;
       actionsEl.appendChild(line);
-      // Keep last 10
       while (actionsEl.children.length > 10) actionsEl.removeChild(actionsEl.firstChild);
     }
   }
